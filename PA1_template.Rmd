@@ -1,0 +1,143 @@
+---
+title: "PA1_template.Rmd"
+output: html_document
+---
+
+This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+
+When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+##Peer Assignment1 Reproducible Research
+
+###Read CSV file from working directory
+
+```{r}
+active <- read.csv("activity.csv")
+```
+
+###veiw column names and data from first 6 rows
+```{r}
+head(active)
+```
+###To find the mean number of steps per day first remove missing data, sum the the remainig data then calculate the mean.
+```{r}
+#subset complete data 
+actComplete <- active[complete.cases(active),]
+
+#calulate daily sum of steps
+sumSteps <- aggregate(steps ~ date, actComplete, sum)
+
+#rename sum of steps 
+names(sumSteps)[2] <- "dailySteps"
+
+#veiw column names and first six rows
+head(sumSteps)
+
+#plot histogram
+hist(
+        sumSteps$dailySteps,
+        col = "red",
+        main = "Histogram of daily total steps",
+        xlab = "Total Number of steps",
+        breaks = 10
+)
+
+#calculate mean steps
+mean(sumSteps$dailySteps)
+#calculate median steps
+median(sumSteps$dailySteps)
+```
+
+###Calculate mean number of steps tahen per day then plot time series of mean steps taken per day versus interval. Calculate the interval with the maximum number of steps.
+
+```{r}
+meanSteps <- aggregate(steps ~ interval, actComplete, mean)
+
+names(meanSteps)[2] <- "averageSteps"
+
+head(meanSteps)
+
+plot(
+        x = meanSteps$interval,
+        y = meanSteps$averageSteps,
+        type = "l",
+        main = "Time Series Plot of the average number of steps versus 5 minute interval",
+        xlab = "5 minute intervals",
+        ylab = "Average number of steps"
+)
+
+meanSteps[meanSteps$averageSteps==max(meanSteps$averageSteps),]
+```
+
+###Calculate the number of missing values, replace missing values with the mean and create a new dataset without any missing variables.Plot a histogram with new mean number of steps for imputed data then re-calculate the mean and median
+
+```{r}
+nrow(active[is.na(active$steps),])
+
+#create file to impute data
+actImpute<-active
+
+#impute data, replace na with mean
+actImpute$steps[is.na(actImpute$steps)] <- round(mean(actImpute$steps, na.rm = TRUE))
+
+#check number of rows with missing data to ensure imputation was successful  
+nrow(actImpute[is.na(actImpute$steps),])
+
+#calulate daily sum of steps for imputed data
+sumSteps2 <- aggregate(steps ~ date, actImpute, sum)
+
+#rename sum of steps 
+names(sumSteps2)[2] <- "dailySteps"
+
+#veiw column names and first six rows
+head(sumSteps2)
+
+#plot histogram
+hist(
+        sumSteps2$dailySteps,
+        col = "red",
+        main = "Histogram of daily total steps",
+        xlab = "Total Number of steps",
+        breaks = 10
+)
+
+#calculate mean steps for imputed data
+mean(sumSteps2$dailySteps)
+
+median(sumSteps2$dailySteps)
+```
+###Differentiate between weekdays and weekends then plot time series data comparing mean steps on weekdays and weekends
+
+```{r}
+actWeek<-actImpute
+
+weekend <- weekdays(as.Date(actWeek$date)) %in% c("Saturday", "Sunday")
+
+actWeek$weekday_or_weekend <- "weekday"
+
+actWeek$weekday_or_weekend[weekend == TRUE] <- "weekend"
+
+actWeek$weekday_or_weekend <- as.factor(actWeek$weekday_or_weekend)
+
+head(actWeek)
+
+str(actWeek)
+
+meanStepsW <- aggregate(steps ~ interval + weekday_or_weekend, actWeek, mean)
+
+names(meanStepsW)[3] <- "averageStepsW"
+
+head(meanStepsW)
+
+library(lattice)
+
+xyplot(
+        averageStepsW ~ interval | weekday_or_weekend,
+        meanStepsW,
+        type = "l",
+        layout = c(1,2),
+        main = "Time Series Plot of the average number of steps versus 5 minute interval for weekday and weekends",
+        xlab = "5 minute interval",
+        ylab = "Average Number of Steps"
+)
+```
+
