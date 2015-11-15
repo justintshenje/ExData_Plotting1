@@ -8,21 +8,28 @@ This is an R Markdown document. Markdown is a simple formatting syntax for autho
 When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
 ##Peer Assignment1 Reproducible Research
 
-###Read CSV file from working directory
+###Loading and processing data by removing missing data
 
 ```{r}
+if(!file.exists("getdata-projectfiles-UCI HAR Dataset.zip")) {
+        temp <- tempfile()
+        download.file("http://d396qusza40orc.cloudfront.net/repdata%2Fdata%2Factivity.zip",temp)
+        unzip(temp)
+        unlink(temp)
+}
+
 active <- read.csv("activity.csv")
-```
 
-###veiw column names and data from first 6 rows
-```{r}
 head(active)
-```
-###To find the mean number of steps per day first remove missing data, sum the the remainig data then calculate the mean.
-```{r}
+
 #subset complete data 
 actComplete <- active[complete.cases(active),]
 
+```
+
+###What is the mean total number of daily steps also plot histogram.
+
+```{r}
 #calulate daily sum of steps
 sumSteps <- aggregate(steps ~ date, actComplete, sum)
 
@@ -47,7 +54,7 @@ mean(sumSteps$dailySteps)
 median(sumSteps$dailySteps)
 ```
 
-###Calculate mean number of steps tahen per day then plot time series of mean steps taken per day versus interval. Calculate the interval with the maximum number of steps.
+###What is the average daily actiivity pattern.
 
 ```{r}
 meanSteps <- aggregate(steps ~ interval, actComplete, mean)
@@ -68,7 +75,7 @@ plot(
 meanSteps[meanSteps$averageSteps==max(meanSteps$averageSteps),]
 ```
 
-###Calculate the number of missing values, replace missing values with the mean and create a new dataset without any missing variables.Plot a histogram with new mean number of steps for imputed data then re-calculate the mean and median
+###Impute missing data and recalculate the mean and median
 
 ```{r}
 nrow(active[is.na(active$steps),])
@@ -105,7 +112,8 @@ mean(sumSteps2$dailySteps)
 
 median(sumSteps2$dailySteps)
 ```
-###Differentiate between weekdays and weekends then plot time series data comparing mean steps on weekdays and weekends
+
+###Are there differences in activity patterns between weekdays and weekends
 
 ```{r}
 actWeek<-actImpute
